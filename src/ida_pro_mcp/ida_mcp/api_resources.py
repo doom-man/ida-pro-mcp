@@ -290,3 +290,26 @@ def xrefs_from_resource(addr: Annotated[str, "Source address"]) -> list[dict]:
             }
         )
     return xrefs
+
+@resource("ida://idb/init_array")
+@idasync
+def get_init_array() -> list[str]:
+    """get all init array function in the database"""
+    init_array: list[str] = []
+
+    for item in idautils.Segments():
+        if item is None:
+            continue
+        name = idc.get_segm_name(item)
+        start = idc.get_segm_start(item)
+        end = idc.get_segm_end(item)
+        if name == ".init_array":
+            p = start
+            while p < end :
+                is_64bit = idaapi.get_inf_structure().is_64bit()
+                if is_64bit:
+                    init_array += [hex(ida_bytes.get_qword(p))]
+                else:
+                    init_array += [hex(ida_bytes.get_dword(p))]
+                p+=8
+    return init_array
